@@ -1,24 +1,21 @@
 from config import Settings
 from container import container
 from notificator import Notificator
+from parser import Parser
+from database import DataBaseSQLite
 
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums.parse_mode import ParseMode
 
 import asyncio
+import time
+
+# TEMP
+from parser import KworkCategory
 
 
-async def startup():
-    notificator: Notificator = container.resolve('notificator')
-    await notificator.notify(
-        user_id=423420323,
-        title="Test Notify 🔔",
-        text="Hello, World!",
-    )
-
-
-def main():
+async def main():
     bot = Bot(
         token=Settings().telegram.token,
         default=DefaultBotProperties(
@@ -26,16 +23,20 @@ def main():
         )
     )
 
-    # parser = Parser()
+    parser = Parser(category=KworkCategory.SCRIPTS_AND_BOTS)
     notificator = Notificator(bot)
+    database = DataBaseSQLite()
+
+    await database.connect()
 
     # Dependency registration
     container.register('bot', bot)
-    # container.register('parser', parser)
+    container.register('parser', parser)
     container.register('notificator', notificator)
+    container.register('database', database)
 
-    asyncio.run(startup())
+    await parser.parse_all()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
